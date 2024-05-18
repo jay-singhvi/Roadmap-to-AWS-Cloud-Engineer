@@ -1,0 +1,15 @@
+[
+    {
+        "ResourceType": "instance",
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "my_ec2"
+            },
+            {
+                "Key": "Environment",
+                "Value": "Preprod"
+            }
+        ]
+    }
+]

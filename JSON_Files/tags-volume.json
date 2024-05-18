@@ -1,0 +1,15 @@
+[
+    {
+        "ResourceType": "volume",
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "my_volume"
+            },
+            {
+                "Key": "Environment",
+                "Value": "Preprod"
+            }
+        ]
+    }
+]

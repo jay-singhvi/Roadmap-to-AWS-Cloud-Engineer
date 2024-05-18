@@ -1,0 +1,252 @@
+$vpcId = (aws ec2 `
+  create-vpc `
+  --profile aws_admin_user1 `
+  --no-paginate `
+  --no-cli-pager `
+  --cidr-block 10.0.0.0/16 `
+  --amazon-provided-ipv6-cidr-block `
+  --tag-specifications file://JSON_Files/tags-vpc.json `
+  --output json | ConvertFrom-Json).Vpc.VpcId
+
+$vpcId
+
+aws ec2 describe-vpcs `
+  --profile aws_admin_user1 `
+  --no-paginate `
+  --no-cli-pager `
+  --vpc-ids $vpcId
+
+$internetGateway = aws ec2 `
+  create-internet-gateway `
+  --profile aws_admin_user1 `
+  --query 'InternetGateway.InternetGatewayId' `
+  --output text `
+  --no-paginate `
+  --no-cli-pager
+
+$internetGateway
+
+aws ec2 attach-internet-gateway `
+  --profile aws_admin_user1 `
+  --internet-gateway-id $internetGateway `
+  --vpc-id $vpcId `
+  --no-cli-pager
+
+aws ec2 `
+  describe-internet-gateways `
+  --profile aws_admin_user1 `
+  --no-paginate `
+  --no-cli-pager `
+  --internet-gateway-ids $internetGateway
+
+$subnetId = aws ec2 `
+  create-subnet `
+  --profile aws_admin_user1 `
+  --vpc-id $vpcId `
+  --cidr-block 10.0.1.0/24 `
+  --availability-zone us-east-1a `
+  --query 'Subnet.SubnetId' `
+  --output text `
+  --no-cli-pager `
+  --tag-specifications file://JSON_Files/tags-subnet.json
+
+$subnetId
+
+aws ec2 `
+  modify-subnet-attribute `
+  --profile aws_admin_user1 `
+  --subnet-id $subnetId `
+  --map-public-ip-on-launch `
+  --no-cli-pager
+
+aws ec2 `
+  describe-subnets `
+  --profile aws_admin_user1 `
+  --no-paginate `
+  --no-cli-pager `
+  --subnet-ids $subnetId
+
+$routeTableId = aws ec2 `
+  create-route-table `
+  --profile aws_admin_user1 `
+  --vpc-id $vpcId `
+  --query 'RouteTable.RouteTableId' `
+  --output text `
+  --no-cli-pager `
+  --tag-specifications file://JSON_Files/tags-routetable.json
+
+$routeTableId
+
+aws ec2 `
+  describe-route-tables `
+  --profile aws_admin_user1 `
+  --route-table-ids $routeTableId `
+  --output table `
+  --no-cli-pager `
+  --no-paginate
+
+aws ec2 `
+  create-route `
+  --profile aws_admin_user1 `
+  --route-table-id $routeTableId `
+  --destination-cidr-block 0.0.0.0/0 `
+  --gateway-id $internetGateway `
+  --no-cli-pager
+
+aws ec2 `
+  associate-route-table `
+  --profile aws_admin_user1 `
+  --route-table-id $routeTableId `
+  --subnet-id $subnetId `
+  --no-cli-pager
+
+$instanceId = aws ec2 `
+  run-instances `
+  --profile aws_admin_user1 `
+  --image-id ami-0bb84b8ffd87024d8 `
+  --count 1 `
+  --instance-type t2.micro `
+  --key-name pem-key-pair `
+  --subnet-id $subnetId `
+  --associate-public-ip-address `
+  --output text `
+  --query 'Instances[0].InstanceId' `
+  --no-cli-pager `
+  --no-paginate `
+  --tag-specifications file://JSON_Files/tags-instance.json
+
+$instanceId
+
+aws ec2 `
+  describe-instances `
+  --profile aws_admin_user1 `
+  --instance-ids $instanceId `
+  --no-cli-pager `
+  --no-paginate `
+  --output table
+
+$volumeId = aws ec2 `
+  create-volume `
+  --profile aws_admin_user1 `
+  --availability-zone us-east-1a `
+  --size 10 `
+  --volume-type standard `
+  --query 'VolumeId' `
+  --tag-specifications file://JSON_Files/tags-volume.json `
+  --output text `
+  --no-cli-pager `
+  --no-paginate
+
+$volumeId
+
+aws ec2 `
+  describe-volumes `
+  --profile aws_admin_user1 `
+  --volume-ids $volumeId `
+  --no-cli-pager `
+  --no-paginate `
+  --output table
+
+aws ec2 attach-volume `
+  --profile aws_admin_user1 `
+  --volume-id $volumeId `
+  --instance-id $instanceId `
+  --device /dev/sdh `
+  --no-paginate `
+  --no-cli-pager
+
+aws ec2 modify-volume `
+  --profile aws_admin_user1 `
+  --volume-id $volumeId `
+  --size 25 `
+  --volume-type gp2 `
+  --no-paginate `
+  --no-cli-pager
+
+aws ec2 delete-volume `
+  --profile aws_admin_user1 `
+  --volume-id $volumeId `
+  --no-paginate `
+  --no-cli-pager
+
+aws ec2 `
+  terminate-instances `
+  --profile aws_admin_user1 `
+  --instance-ids $instanceId `
+  --no-paginate `
+  --no-cli-pager
+
+aws ec2 delete-volume `
+  --profile aws_admin_user1 `
+  --volume-id $volumeId `
+  --no-paginate `
+  --no-cli-pager
+
+aws ec2 `
+  describe-volumes `
+  --profile aws_admin_user1 `
+  --volume-ids $volumeId `
+  --no-cli-pager `
+  --no-paginate `
+  --output table
+
+$policyId = aws iam `
+  create-policy `
+  --profile aws_admin_user1 `
+  --policy-name my-policy `
+  --policy-document file://JSON_Files/policy-s3.json `
+  --output text `
+  --query 'Policy.Arn' `
+  --no-cli-pager
+
+$policyId
+
+aws iam `
+  get-policy `
+  --profile aws_admin_user1 `
+  --policy-arn $policyId `
+  --output table `
+  --no-paginate `
+  --no-cli-pager
+
+$bucketName = "my-object-storage-bucket"
+aws s3api `
+  create-bucket `
+  --profile aws_admin_user1 `
+  --bucket $bucketName `
+  --no-paginate `
+  --output table `
+  --region us-east-1 `
+  --no-cli-pager
+
+aws s3api `
+  list-buckets `
+  --profile aws_admin_user1 `
+  --no-paginate `
+  --output table `
+  --region us-east-1 `
+  --no-cli-pager
+
+aws s3 cp my-s3-file.txt s3://$bucketName/ `
+  --profile aws_admin_user1 `
+  --no-cli-pager
+
+aws s3 ls s3://$bucketName/ `
+  --profile aws_admin_user1 `
+  --recursive `
+  --human-readable `
+  --no-cli-pager
+
+aws s3 rm s3://$bucketName/my-s3-file.txt `
+  --profile aws_admin_user1 `
+  --no-cli-pager
+
+aws s3 rb s3://$bucketName `
+  --profile aws_admin_user1 `
+  --force `
+  --no-cli-pager
+
+aws ec2 terminate-instances `
+  --profile aws_admin_user1 `
+  --instance-ids $instanceId `
+  --no-cli-pager

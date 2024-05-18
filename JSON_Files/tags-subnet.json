@@ -1,0 +1,15 @@
+[
+    {
+        "ResourceType": "subnet",
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "my_subnet"
+            },
+            {
+                "Key": "Environment",
+                "Value": "Preprod"
+            }
+        ]
+    }
+]
