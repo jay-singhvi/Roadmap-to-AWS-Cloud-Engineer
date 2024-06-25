@@ -1,3 +1,5 @@
+aws sso login --profile aws_admin_user1
+
 $vpcId = (aws ec2 `
   create-vpc `
   --profile aws_admin_user1 `
